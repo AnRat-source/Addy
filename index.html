@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Doki-style Carrd — Single File</title>
+  <style>
+    :root{
+      --bg1:#ffd1e8; /* soft pink */
+      --bg2:#fff6fb; /* pale */
+      --accent:#ff6fa3; /* vibrant pink */
+      --accent-2:#ffb3d9;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --glass: rgba(255,255,255,0.65);
+      --shadow: 0 10px 30px rgba(15,15,20,0.12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+
+    /* page layout */
+    html,body{height:100%;margin:0}
+    body{
+      display:grid;place-items:center;padding:48px; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      background: url("Images/school.webp") bottom/cover no-repeat;
+      backdrop-filter: blur(5px);
+      overflow: hidden;
+    }
+    body::after{
+        background: linear-gradient(135deg,var(--bg1) 0%, var(--bg2) 60%);
+    }
+
+    /* floating sakura petals animation */
+    .petals{
+      pointer-events:none; position:fixed; inset:0; z-index:0; overflow:hidden;
+    }
+    .petal{ position:fixed; width:18px; height:18px; background:linear-gradient(180deg,var(--accent),var(--accent-2)); border-radius:50% 50% 30% 70% / 60% 60% 40% 40%; opacity:0.85; transform:rotate(25deg); filter:blur(5px); overflow: hidden;}
+
+    /* central card */
+    .card{
+      width:min(720px, 92vw);
+      background: linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0.9));
+      border-radius:18px; box-shadow:var(--shadow); position:relative; z-index:2; overflow:hidden;
+      display:grid; grid-template-columns: 240px 1fr; gap:0; align-items:stretch;
+      border:1px solid rgba(255,255,255,0.6);
+      backdrop-filter: blur(610px) saturate(120%);
+    }
+
+    /* left panel */
+    .left{
+      background: linear-gradient(180deg, rgba(255,111,160,0.12), rgba(255,179,217,0.06)); padding:28px; display:flex; flex-direction:column; gap:14px; align-items:center; justify-content:flex-start;
+    }
+    .avatar{
+      width:160px; height:160px; border-radius:14px; background:linear-gradient(135deg,var(--accent),#ffd0ea); box-shadow:0 8px 20px rgba(255,111,160,0.18); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:44px; color:white;
+      border:4px solid rgba(255,255,255,0.6);
+    }
+    .pfp{
+        width:160px; height:160px; border-radius:14px; background:linear-gradient(135deg,var(--accent),#ffd0ea); box-shadow:0 8px 20px rgba(255,111,160,0.18); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:44px; color:white;
+      border:4px solid rgba(255,255,255,0.6);
+    }
+    .name{ font-size:20px; font-weight:700; color:#2b2b2b; text-align:center; }
+    .handle{ font-size:13px; color:var(--muted); }
+    .stats{ display:flex; gap:10px; margin-top:8px; }
+    .stat{ background:rgba(255,255,255,0.6); padding:8px 12px; border-radius:999px; font-size:13px; color:#333; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.03);} 
+
+    /* right content */
+    .right{ padding:28px; }
+    .title{ font-size:28px; font-weight:800; margin:0 0 6px 0; letter-spacing:-0.02em; color:#252525 }
+    .subtitle{ font-size:14px; color:var(--muted); margin:0 0 16px 0 }
+
+    .bio {
+        font-size: 15px;
+        line-height: 1.5;
+        color: #333;
+        margin-bottom: 16px;
+
+        max-height: 108px;
+        overflow: hidden;
+        position: relative;
+        transition: max-height 2s linear, -webkit-mask-image 400ms cubic-bezier(.2,.9,.3,1), mask-image 400ms cubic-bezier(.2,.9,.3,1);
+
+        /* fade the text itself */
+        -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+        mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+    }
+            /* Expanded state */
+    .bio.expanded {
+        max-height: 900px;
+
+        /* remove fade */
+        -webkit-mask-image: none;
+        mask-image: none;
+    }
+
+    .fade{ content:''; position:absolute; left:0; right:0; bottom:0; height:36px; background:linear-gradient(180deg, rgba(255,255,255,0), rgba(255, 255, 255, 0)); pointer-events:none }
+
+    .cta-row{ display:flex; gap:12px; align-items:center; margin-bottom:10px }
+    .btn{ padding:10px 14px; border-radius:12px; border:0; cursor:pointer; font-weight:600; font-size:14px; transition: transform .14s ease, box-shadow .14s ease; box-shadow: 0 6px 18px rgba(11,11,20,0.06); }
+    .btn:active{ transform:translateY(1px) }
+    .btn-primary{ background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:white }
+    .btn-ghost{ background:transparent; border:1px solid rgba(0,0,0,0.06); color:var(--muted) }
+
+    /* poem area */
+    .poem{ margin-top:8px; padding:14px; background:linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0.6)); border-radius:12px; min-height:90px; font-style:italic; color:#4a2a3a }
+
+    /* small interaction styles */
+    .readmore{ background:none;border:0;color:var(--accent);cursor:pointer;font-weight:700 }
+    .socials{ margin-top:16px; display:flex; gap:8px }
+    .pill{ padding:8px 10px; border-radius:999px; font-size:13px; background:rgba(255,111,160,0.08); color:var(--accent); border:1px solid rgba(255,111,160,0.06) }
+
+    /* responsive */
+    @media (max-width:740px){
+      .card{ grid-template-columns: 1fr; width:94vw }
+      .left{ padding:20px; flex-direction:row; gap:12px; align-items:center }
+      .avatar{ width:96px; height:96px; }
+    }
+
+    /* tiny cursor sparkle */
+    .cursor-dot{ position:fixed;width:8px;height:8px;border-radius:8px;pointer-events:none; transform:translate(-50%,-50%); z-index:9999; mix-blend-mode:normal; }
+
+    .monika-bg {
+        position: fixed;
+        top: 200px;
+        overflow: visible;
+        inset: 0;
+        background: url("Images/MonikaStanding.webp") center no-repeat;
+        z-index: -100;
+        width: 110%;
+        height: 110%;
+        background-size: contain;
+        transform: translate(100vw, 0px) rotate(45deg);
+        filter: blur(15px);
+        transition: transform 5s cubic-bezier(0.25, 1, 0.5, 1), filter 3s linear;
+        
+    }
+
+    .monika-bg.loaded {
+        transform: translate(20vw, 0px) rotate(0.1deg);
+        animation: monikaShake 7s ease-in-out infinite 4.9s; /* starts after transition */
+        filter: blur(1px);
+    }
+
+    /* Fade at the bottom */
+    .monika-bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+    }
+
+    @media (min-width: 800px) {
+      .monika-bg {
+        z-index: 0;
+      }
+    }
+
+    @keyframes monikaShake {
+      0% { transform: translate(20vw, 0px) rotate(0.1deg); }
+      15% { transform: translate(20.1vw, -2px) rotate(-0.1deg); }
+      50% { transform: translate(19.9vw, 2px) rotate(0.1deg); }
+      80% { transform: translate(20.1vw, -2px) rotate(-0.1deg); }
+      100% { transform: translate(20vw, 0px) rotate(0.1deg); }
+    }
+
+    /* Loading screen */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: #0b0b0d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: var(--muted);
+      z-index: 9999;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+
+      overflow: none;
+
+      background: url("Images/school.webp") bottom/cover no-repeat;
+      top: -20px;
+      width: 105vw;
+      height: 105vh;
+      filter: blur(15px);
+      animation: blurCycle 20s ease-in-out infinite, cameraShake 10s ease-in-out infinite;
+    }
+
+    #loader.fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    /* Spinner animation */
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    ::selection {
+            background-color: rgb(255, 135, 235); /* Or use hex: #800080 */
+            box-shadow: #b044ef 0 0 20px;
+            color: rgb(190, 216, 255); /* Optional: Change text color for better contrast */
+    }
+
+  </style>
+</head>
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+  <div class="petals" aria-hidden="true"></div>
+  <div class="monika-bg" id="monika"></div>
+
+  <main class="card" role="main">
+    <section class="left">
+      <div class="avatar" id="avatar">
+        <img src="Images/PFP.png" alt="icon" class="pfp">
+    </div>
+      <div style="text-align:center">
+        <div class="name">Эдди</div>
+        <div class="handle">♡ Addy • She/Her • 🇵🇭 ♡</div>
+        <div class="stats" style="margin-top:10px">
+          <div class="stat">Age: <span id="Age"></span></div>
+          <div class="stat">Stat2 67</div>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+      <div style="font-size:11px;color:var(--muted);text-align:center">made with ♥<br>AnRat was here</div>
+    </section>
+
+    <section class="right">
+      <h1 class="title">Эдди !!!</h1>
+      <p class="subtitle">i dont know what text to put here help</p>
+
+      <div class="bio" id="bio">
+        <span id="Intro">
+            ୨୧ : about me <br>
+            Hai ! My name's Addy, but don't worry, you can call me anything ! (just not inappropriate please) I'm a female, Filipina, Straight, 5'7, Catholic, & also a minor. <br> 
+            Additionally, don't friend/follow me if you will just sexualize me/make me uncomfortable.
+        </span>
+        <span id="Intrests">
+            ୨୧ : loves <br>
+            To all the names I will mention here, thank you for everything. You mean a lot to me. Every each of you brought so much memories to me.
+            Yeshua, my Mom Jovey, Vincent, Aljur, Seph, Rafa, & my other friends!
+        </span>
+        <span id="Yap">
+            ୨୧ : interests <br>
+            I love to play video games ! <br>
+            {Identity V, Roblox, Good Pizza Great Pizza, Final Fantasy 7, Love & Deepspace}. <br>
+            I love music ! Go check my spotify to see my favorite genres ! <br>
+            I also LOVE LOVE LOVE Katseye. They're my safe space, ilysm girlies. <br>
+            I read fantasy/sci-fi books to forget everything. My favorite book series is the Land of Stories & my favorite novel is Little Women. <br>
+            I love to bake, especially for those who I love and I like to cook ! Thank you mom for teaching me how to cook. <br>
+            My favorite sport is Skating (favorite skater is Anya Shcherbakova), although I have never done it. The only sport I'm actually good at is Swimming. <br>
+            Further more, I like to study & clean so sometimes I may reply late to you :(. <br>
+            I prioritize my studies a lot than anything else. <br>
+        </span>
+        <div class="fade" id="fade"></div>
+      </div>
+
+      <div class="cta-row">
+        <button class="btn btn-ghost" id="moreBtn">Read more</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost" id="introBtn">Intro</button>
+        <button class="btn btn-ghost" id="intrestsBtn">Love</button>
+        <button class="btn btn-ghost" id="yapBtn">Yap</button>
+      </div>
+
+      <div class="socials" aria-hidden="false">
+        <div class="pill"><a href="https://discord.gg/k6AN65RBgX" style="text-decoration: none; color: var(--accent);">Discord</a></div>
+        <div class="pill"><a href="https://x.com/xoMiss_Addyxo?t=VtnPpIpsvdOLvsheU9HbTQ&s=09" style="text-decoration: none; color: var(--accent);">Twitter</a></div>
+        <div class="pill"><a href="https://ph.pinterest.com/snowey_gorl/" style="text-decoration: none; color: var(--accent);">Pintrest</a></div>
+        <div class="pill"><a href="https://open.spotify.com/user/31imud3diunewqyinfdzvs5sgdme" style="text-decoration: none; color: var(--accent);">Spotify</a></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function yearsSince(dateString) {
+        const start = new Date(dateString);
+        const now = new Date();
+
+        let years = now.getFullYear() - start.getFullYear();
+
+        // Adjust if the anniversary hasn't happened yet this year
+        const hasHadBirthday =
+        now.getMonth() > start.getMonth() ||
+        (now.getMonth() === start.getMonth() && now.getDate() >= start.getDate());
+
+        if (!hasHadBirthday) years--;
+
+        return years;
+    }
+
+    document.getElementById("Age").textContent = yearsSince("2010-05-16");
+
+    function getBackgroundImages() {
+        const elements = Array.from(document.querySelectorAll('*'));
+        const urls = [];
+
+        elements.forEach(el => {
+        const bg = getComputedStyle(el).backgroundImage;
+        if (bg && bg !== 'none' && bg.includes('url(')) {
+            const matches = bg.match(/url\(["']?([^"')]+)["']?\)/g);
+            if (matches) {
+            matches.forEach(url => {
+                const cleanUrl = url.replace(/url\(["']?/, '').replace(/["']?\)/, '');
+                urls.push(cleanUrl);
+            });
+            }
+        }
+        });
+
+        return urls;
+    }
+    // Wait for all images (including CSS backgrounds)
+    async function waitForAllImages() {
+        const imgElements = Array.from(document.images).map(img => img.src);
+        const bgImages = getBackgroundImages();
+        const allUrls = [...imgElements, ...bgImages];
+
+        await Promise.all(allUrls.map(src => {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = img.onerror = resolve;
+            img.src = src;
+        });
+        }));
+    }
+
+    const monika = document.getElementById("monika");
+
+    // Main preloader
+    document.addEventListener("DOMContentLoaded", async () => {
+        await waitForAllImages();
+        const loader = document.getElementById("loader");
+        loader.classList.add("fade-out");
+        
+        setTimeout(() => loader.remove(), 800);
+        setTimeout(() => {
+        console.log("Adding loaded class...");
+        monika.classList.add("loaded");
+        }, 200);
+    });
+
+    // generate falling petals
+    const petals = document.querySelector('.petals');
+    const count = 18;
+    for(let i=0;i<count;i++){
+      const el = document.createElement('div'); el.className='petal';
+      const x = Math.random()*100; const delay = Math.random()*6; const dur = 8+Math.random()*8;
+      el.style.left = x+'%'; el.style.top = (-10 - Math.random()*20)+'%';
+      el.style.opacity = 0.6 + Math.random()*0.4;
+      el.style.transform = `rotate(${Math.random()*360}deg)`;
+      el.style.width = (12+Math.random()*26)+'px'; el.style.height = (10+Math.random()*28)+'px';
+      el.style.transition='transform linear';
+      petals.appendChild(el);
+      // animate with JS for randomness
+      (function(a,d){
+        const to = () => {
+          a.animate([
+            { transform: `translateY(0) rotate(${Math.random()*360}deg)` },
+            { transform: `translateY(${120+Math.random()*40}vh) rotate(${Math.random()*360}deg)` }
+          ],{ duration: (8000 + Math.random()*8000), iterations: 1, easing:'linear' }).onfinish = () => {
+            a.style.left = (Math.random()*100)+'%';
+            a.style.top = (-10 - Math.random()*20)+'%';
+            setTimeout(to, Math.random()*1200);
+          }
+        };
+        setTimeout(to, Math.random()*4000 + 200);
+      })(el, delay);
+    }
+
+    // read more toggle
+    const moreBtn = document.getElementById('moreBtn');
+    const bio = document.getElementById('bio');
+    const fade = document.getElementById('fade');
+    let expanded = false;
+    moreBtn.addEventListener('click', ()=>{
+      expanded = !expanded;
+      bio.classList.toggle('expanded', expanded);
+      fade.style.display = expanded? 'none' : 'block';
+      moreBtn.textContent = expanded? 'Show less' : 'Read more';
+    });
+    // tiny accessibility: keyboard "r" to read, "m" to toggle more
+    document.addEventListener('keydown', e=>{
+      if(e.key.toLowerCase()==='m') moreBtn.click();
+    });
+
+    const Intro = document.getElementById("Intro")
+    const Intrests = document.getElementById("Intrests")
+    const Yap = document.getElementById("Yap")
+
+    Intro.style.display = "block"
+    Intrests.style.display = "none"
+    Yap.style.display = "none"
+
+    const IntroButton = document.getElementById("introBtn")
+    IntroButton.addEventListener('click', ()=>{
+        if (expanded) moreBtn.click();
+
+      Intro.style.display = "block"
+      Intrests.style.display = "none"
+      Yap.style.display = "none"
+    });
+
+    const IntrestsButton = document.getElementById("intrestsBtn")
+    IntrestsButton.addEventListener('click', ()=>{
+        if (expanded) moreBtn.click();
+      Intro.style.display = "none"
+      Intrests.style.display = "block"
+      Yap.style.display = "none"
+    });
+    const YapButton = document.getElementById("yapBtn")
+    YapButton.addEventListener('click', ()=>{
+        if (expanded) moreBtn.click();
+      Intro.style.display = "none"
+      Intrests.style.display = "none"
+      Yap.style.display = "block"
+    });
+
+
+  </script>
+</body>
+</html>
